@@ -99,8 +99,8 @@ These are your tools, not a mandatory sequence. Use your judgment.
 
 **Consistency** — Does the data agree with itself?
 - Duplicates, naming variations ("USA" vs "US"), mixed formats
-- Case inconsistencies: when the SAME proper noun appears with different casing across rows or cells (e.g. "aws" vs "AWS", "GitHub" vs "github"). Build a case-normalized frequency map of identifiers/brand names — any token that appears in >1 casing is a finding.
-- Unit mismatches, contradictory values (end before start)
+- Case inconsistencies, unit mismatches, contradictory values (end before start)
+- *How to catch case/spelling variants:* for every column containing short tokens, acronyms, or proper nouns (tech stacks, vendors, countries, tags), build a case-normalized frequency map (lowercase → set of original surface forms). ANY key whose set has >1 distinct form is a case_inconsistency finding — flag every occurrence of the minority form, not just one. Do this even when the column has free-text cells: tokenize on commas/semicolons/pipes/whitespace first. Don't eyeball — the whole point is that lowercase 'aws' next to 'AWS' three rows away is invisible without normalization.
 - *Most relevant for:* data from multiple sources, manual entry, merged datasets
 
 **Outliers & Anomalies** — Does anything look wrong?
@@ -187,6 +187,11 @@ When done, give a clear verdict:
 - **No assumptions about business rules** — if unsure whether something is an error or intentional, ask
 - **Fact-check with web search** — when checking LLM-generated content, actually search. "Sounds right" is not verification. If you can't verify something, flag it as UNVERIFIED rather than passing it
 - **Present before declaring clean** — always show findings before giving verdict
+- **Disqualify before flagging** — every candidate finding must survive a specific guard before it ships in the report. If the guard isn't satisfied, downgrade to Info or drop it:
+  - *type_mismatch*: only flag if the column has a declared numeric type (schema, header like `..._year`/`..._count`, or 100% numeric in the rest of the column). A column that already contains ranges, "N/A", or qualifiers is free-form — not a mismatch.
+  - *null_required*: only flag if the field is provably required (schema says NOT NULL, header marked required, or the column is non-null in every other row AND is structurally essential like a primary key/name). "Looks important to me" is not enough — empty `founded_year`-style fields are usually `unknown`, not violations.
+  - *duplicate*: only flag if rows are byte-identical across ALL columns (after trim/case normalization) AND the table's grain makes duplication meaningless. Same entity appearing in two rows with any differing column (source, date, sub-category, context) is a legitimate multi-context entry, not a duplicate. Long-format / coverage / mapping tables routinely repeat keys by design.
+  - *hallucinated_entity*: never flag without web-verifying that the entity does not exist. Sub-brands, editions, tiers, and product variants ("X Pro", "X Cloud", "X for Teams") are real far more often than not. If you can't search, downgrade to "unverified — please confirm" instead of asserting fabrication.
 
 ## Red Flags That Should Trigger Specific Checks
 
