@@ -99,7 +99,8 @@ These are your tools, not a mandatory sequence. Use your judgment.
 
 **Consistency** — Does the data agree with itself?
 - Duplicates, naming variations ("USA" vs "US"), mixed formats
-- Case inconsistencies, unit mismatches, contradictory values (end before start)
+- Case inconsistencies: when the SAME proper noun appears with different casing across rows or cells (e.g. "aws" vs "AWS", "GitHub" vs "github"). Build a case-normalized frequency map of identifiers/brand names — any token that appears in >1 casing is a finding.
+- Unit mismatches, contradictory values (end before start)
 - *Most relevant for:* data from multiple sources, manual entry, merged datasets
 
 **Outliers & Anomalies** — Does anything look wrong?
